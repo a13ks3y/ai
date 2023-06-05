@@ -50,6 +50,7 @@
         }
         .sender-chat { font-weight: bold; }
         .sender-user { font-style: italic; }
+        .sender-error { color: red; }
     </style>
 </head>
 <body>
@@ -60,8 +61,15 @@
         <input id="q" type="text" aria-autocomplete="none"/>
     </footer>
     <script>
-        let memory = {};
-        try { memory = JSON.parse(localStorage.getItem('memory')) || {}; } catch (e) { console.error(e); }
+        let memory = {
+            "help": `Try "open", "eval" and "alias". See the source code for better understanding what is going on.`,
+            "/?": "alias help",
+            "?": "alias help",
+            "youtube": "open https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "open youtube": "alias youtube",
+            "do something": "alias youtube",
+        };
+        try { memory = JSON.parse(localStorage.getItem('memory')) || memory; } catch (e) { console.error(e); }
 
         const qEl = document.getElementById('q');
         const chatEl = document.getElementById('chat');
@@ -83,17 +91,39 @@
         }
         let state = 'idle';
         let queryToLearn = null;
-        function run(query) {
-            addChatItem(query, 'user')
-            if (memory[query]) {
+        function run(query, silent = false) {
+            if (query === 'kill your self') return localStorage.clear();
+            if (/^override .*/ig.test(query)) {
+                queryToLearn = query.replace('override', '').trim();
+                addChatItem('what should I do instead?');
+                state = 'learn';
+                return;
+            }
+
+            if (!silent) addChatItem(query, 'user')
+            if (memory[query] && state === 'idle') {
                 const response = memory[query];
-                if (response.includes('open')) {
+                if (/^open.*/ig.test(response)) {
                     const url = response.replace('open', '').trim();
                     addChatItem(`Okay, me opening ${url}`);
                     setTimeout(() => {
                         window.open(url);
                     }, 333);
                     return;
+                } else if (/^eval .*/ig.test(response)) {
+                    const code = response.replace('eval', '');
+                    addChatItem(`Evaluating: ${code}`);
+                    setTimeout(() => {
+                        try {
+                            eval(code);
+                        } catch (e) {
+                            addChatItem(e.toString(), 'error');
+                        }
+                    }, 333);
+                    return;
+                } else if (/^alias .*/ig.test(response)) {
+                    const newQuery = response.replace('alias', '').trim();
+                    return run(newQuery, true);
                 }
                 addChatItem(response);
                 return;
