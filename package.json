@@ -1,0 +1,17 @@
+{
+  "name": "ai",
+  "version": "1.0.0",
+  "description": "＼（〇_ｏ）／",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "idiot"
+  ],
+  "author": "a13ks3y",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/android": "^5.0.4"
+  }
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI</title>
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+    <style>
+        :root { color-scheme: dark light; }
+        body {
+            background-color: #504a4a;
+            position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: block; margin: 0; padding: 0;
+            background-image: url("./bg.png");
+            background-repeat: no-repeat;
+            background-position-y: calc(100vh - 390px);
+            background-position-x: calc(100vw - 420px);
+            animation-name: ugh;
+            animation-duration: 666s;
+            animation-iteration-count: infinite;
+        }
+        @keyframes ugh {
+            0% {
+                background-position-x: calc(100vw - 420px);
+            }
+            50% {
+                background-position-x: calc(100vw - 920px);
+            }
+            100% {
+                background-position-x: calc(100vw - 420px);
+            }
+        }
+        .sender-chat { color: blue; }
+        .sender-user { color: #f90; }
+    </style>
+</head>
+<body>
+    <main>
+        <ul id="chat"></ul>
+    </main>
+    <footer>
+        <input id="q" type="text" aria-autocomplete="none"/>
+    </footer>
+    <script>
+        let memory = {};
+        try { memory = JSON.parse(localStorage.getItem('memory')) || {}; } catch (e) { console.error(e); }
+
+        const qEl = document.getElementById('q');
+        const chatEl = document.getElementById('chat');
+
+        qEl.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const query = qEl.value;
+                run(query);
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        function addChatItem(html, sender = 'chat') {
+            const liEl = document.createElement('li');
+            liEl.classList.add(`sender-${sender}`);
+            liEl.innerHTML = html;
+            chatEl.appendChild(liEl);
+        }
+        let state = 'idle';
+        let queryToLearn = null;
+        function run(query) {
+            addChatItem(query, 'user')
+            if (memory[query]) {
+                const response = memory[query];
+                if (response.includes('open')) {
+                    const url = response.replace('open', '').trim();
+                    addChatItem(`Okay, me opening ${url}`);
+                    setTimeout(() => {
+                        window.open(url);
+                    }, 333);
+                    return;
+                }
+                addChatItem(response);
+                return;
+            }
+            switch (state) {
+                case 'idle':
+                    addChatItem(`I'm such an IDIOT, I don't know how to respond. Please tell me.`);
+                    state = 'learn';
+                    queryToLearn = query;
+                    break;
+                case 'learn':
+                    memory[queryToLearn] = query;
+                    addChatItem(`Ok, from now on, I'll respond "${memory[queryToLearn]}" to "${queryToLearn})"`);
+                    state = 'idle';
+                    queryToLearn = null;
+                    break;
+            }
+            try { localStorage.setItem('memory', JSON.stringify(memory)); } catch (e) { console.error(e); }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.a13ks3y.ai",
+  "appName": "ai",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
