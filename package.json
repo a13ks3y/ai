@@ -1,7 +1,7 @@
 {
   "name": "ai",
-  "version": "1.0.0",
-  "description": "＼（〇_ｏ）／",
+  "version": "1.0.1",
+  "description": "¯\\_(ツ)_/¯",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
