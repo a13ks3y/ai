@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIVS Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            overflow-y: auto;
+        }
+        #input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+        #input-container input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #input-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+            border: none;
+            background-color: #007acc;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #input-container button:hover {
+            background-color: #005f99;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .message.user {
+            background-color: #007acc;
+            color: white;
+            align-self: flex-end;
+        }
+        .message.bot {
+            background-color: #e5e5e5;
+            color: black;
+            align-self: flex-start;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="Type a message...">
+        <button id="send-button">Send</button>
+    </div>
+    <script>
+        let msgElement, lastTick;
+        const vscode = acquireVsCodeApi();
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        sendButton.addEventListener('click', () => {
+            sendMessageToChat();
+        });
+
+        userInput.addEventListener('keyup', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                sendMessageToChat();
+            }
+        });
+
+        function sendMessageToChat() {
+            
+            const userMessage = userInput.value.trim();
+            if (userMessage) {
+                lastTick = Date.now();
+                addMessage(userMessage, 'user');
+                userInput.value = '';
+                vscode.postMessage({command: 'chat', text: userMessage});
+                msgElement = addMessage('', 'codellama');
+            }				
+        }
+
+        window.addEventListener('message', event => {
+            const { command, text } = event.data;
+            if (command === 'chatResponse') {
+                msgElement.innerText = text;
+            } else if (command === 'chatFinishResponse') {
+                const time = new Date(Date.now() - lastTick);
+                msgElement.setAttribute('title', time.toTimeString());
+            }
+        })
+
+        function addMessage(text, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+            messageElement.textContent = text;
+            messageElement.title = (new Date(lastTick)).toTimeString();
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return messageElement;
+        }
+    </script>
+</body>
+</html>
