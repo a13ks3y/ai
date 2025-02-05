@@ -28,12 +28,8 @@ To install the extension, follow these steps:
 ## Usage
 
 1. Open the command palette in Visual Studio Code (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS).
-2. Search for `AI: Start` to initiate the AI.
+2. Search for `Start Chat` to initiate the AI.
 3. Follow the prompts to configure email settings and bash command preferences.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
