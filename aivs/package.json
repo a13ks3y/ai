@@ -22,8 +22,8 @@
         "title": "Open Telegram in sidebar"
       },
       {
-        "command": "aivs.openChat",
-        "title": "Open Chat"
+        "command": "aivs.startChat",
+        "title": "Start Chat"
       }
     ]
   },

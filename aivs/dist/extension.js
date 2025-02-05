@@ -1062,7 +1062,7 @@ function activate(context) {
     vscode.commands.registerCommand("aivs.openTelegramWeb", () => {
       vscode.window.showErrorMessage("Sorry Dave, but I can not do that.");
     }),
-    vscode.commands.registerCommand("aivs.openChat", async () => {
+    vscode.commands.registerCommand("aivs.startChat", async () => {
       const panel = vscode.window.createWebviewPanel(
         "panel",
         "AIVS",
