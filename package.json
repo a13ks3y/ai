@@ -13,5 +13,8 @@
   "license": "MIT",
   "devDependencies": {
     "@capacitor/android": "^5.0.4"
+  },
+  "dependencies": {
+    "marked": "^15.0.7"
   }
 }

@@ -70,7 +70,7 @@
         <button id="send-button">Send</button>
     </div>
     <script>
-        let msgElement, lastTick;
+        let msgElement;
         const vscode = acquireVsCodeApi();
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
@@ -87,10 +87,8 @@
         });
 
         function sendMessageToChat() {
-            
             const userMessage = userInput.value.trim();
             if (userMessage) {
-                lastTick = Date.now();
                 addMessage(userMessage, 'user');
                 userInput.value = '';
                 vscode.postMessage({command: 'chat', text: userMessage});
@@ -101,18 +99,25 @@
         window.addEventListener('message', event => {
             const { command, text } = event.data;
             if (command === 'chatResponse') {
-                msgElement.innerText = text;
+                msgElement.textContent = text;
             } else if (command === 'chatFinishResponse') {
-                const time = new Date(Date.now() - lastTick);
+                const time = new Date();
+                msgElement.innerHTML = text;
                 msgElement.setAttribute('title', time.toTimeString());
             }
         })
 
-        function addMessage(text, sender) {
+        function addMessage(content, sender, format) {
+            format = format || 'text'
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', sender);
-            messageElement.textContent = text;
-            messageElement.title = (new Date(lastTick)).toTimeString();
+            if (format === 'html') {
+              messageElement.innerHTML = content;
+            } else {
+              messageElement.textContent = content;  
+            }
+            
+            messageElement.title = (new Date()).toTimeString();
             chatContainer.appendChild(messageElement);
             chatContainer.scrollTop = chatContainer.scrollHeight;
             return messageElement;
