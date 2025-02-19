@@ -12,6 +12,16 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('aivs.openTelegramWeb', () => {
 			vscode.window.showErrorMessage('Sorry Dave, but I can not do that.');
 		}),
+		vscode.commands.registerCommand('aivs.setModelName', async () => {
+			const modelName = await vscode.window.showInputBox({
+				prompt: 'Enter the model name',
+				placeHolder: 'codellama'
+			});
+			if (modelName) {
+				await vscode.workspace.getConfiguration().update('aivs.modelName', modelName, vscode.ConfigurationTarget.Global);
+				vscode.window.showInformationMessage(`Model name set to ${modelName}`);
+			}
+		}),
 		vscode.commands.registerCommand('aivs.openChat', async () => {
 			const panel = vscode.window.createWebviewPanel(
 				'panel',
@@ -24,12 +34,13 @@ export function activate(context: vscode.ExtensionContext) {
 				if (msg.command === 'chat') {
 					let responseText = '';
 					try {
+						const modelName = vscode.workspace.getConfiguration().get('aivs.modelName', 'codellama');
 						messages.push({
 							role: 'user',
 							content: msg.text
-						})
+						});
 						const streamResponse = await ollama.chat({
-							model: 'codellama',
+							model: modelName,
 							stream: true,
 							messages
 						});
