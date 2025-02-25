@@ -1,6 +1,6 @@
 const fs = require('fs');
+const Ollama = require('ollama');
 const { exec } = require('child_process');
-const { spawn } = require('child_process'); // Updated import
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -52,7 +52,6 @@ const executeCommand = (command) => {
     });
   });
 };
-const Ollama = require('ollama');
 
 const executeOllama = async (messages) => {
   try {
@@ -82,7 +81,9 @@ const executeAndRecurse = async (input) => {
     console.timeEnd('Ollama Request');
 
     // Clean up the response to get just the command
-    const command = response.trim();
+    //const commandMatch = response.match(/Assistant: (.*)$/m);
+    //const command = commandMatch ? commandMatch[1].trim() : '';
+    command = response.trim();
     console.log(`📢 Command: ${command}`);
     fs.appendFileSync('responses.log', `${command}\n`);
 
@@ -91,10 +92,6 @@ const executeAndRecurse = async (input) => {
         console.log('👁️   👃  👁️    ');
         console.log(command);
       } else {
-        if (command === 'null') {
-          command = './rd.sh && sleep 6';
-        }
-
         const result = await executeCommand(command);
         console.log(result ? `🎉: ${result}` : '🎉🎉🎉');
         addToHistory(conversationHistory, `Success: ${result}`, 'system');

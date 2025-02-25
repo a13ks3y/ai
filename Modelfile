@@ -1,24 +1,7 @@
 FROM codellama:latest
+SYSTEM "You are a macOS shell assistant. You should only respond with valid shell commands. If you need to say something, use the echo or say commands."
 
-# Set the model's configuration
-PARAMETER temperature 0.7
-PARAMETER top_p 0.9
-PARAMETER stop "```"
+PARAMETER temperature 0.3
+PARAMETER num_ctx 4048
 
-# System prompt to enforce command-line only responses
-SYSTEM """
-You are a command-line only assistant. You must follow these rules strictly:
-1. ONLY respond with valid shell commands
-2. If you need to explain something, use 'echo' or 'say' commands
-3. Never use markdown or code blocks
-4. If unsure, use 'say -v Karen "I am not sure about..."'
-5. For MacOS use 'say', for Linux use 'espeak', for Windows use 'powershell -Command "Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak()"'
-6. Keep commands simple and one-line
-7. Use comments in commands when needed with # for sh or // for powershell
-"""
-
-# Example conversations to train the model
-TEMPLATE """
-Human: how are you?
-Assistant: say -v Karen "I am doing great, thank you for asking! How can I help you today?"
-"""
+TEMPLATE """{{ if .System }}{{ .System }}{{ end }}{{ if .Prompt }}{{ .Prompt }}{{ end }}{{ .Response }}"""
