@@ -1,6 +1,5 @@
 const fs = require('fs');
 const { exec } = require('child_process');
-const { spawn } = require('child_process'); // Updated import
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -10,20 +9,16 @@ const loadEnv = () => {
     env.split('\n').forEach(line => {
       const [key, value] = line.split('=');
       if (key && value) {
-        let strippedValue = value.trim();
-        if (strippedValue.startsWith('"') && strippedValue.endsWith('"')) {
-            strippedValue = strippedValue.slice(1, -1);
-        }
-        process.env[key.trim()] = strippedValue;
+        process.env[key.trim()] = value.trim();
       }
     });
   } else {
     console.log('.env file not found!');
-    console.log('but it is ok, thogh 🤷🏻‍♂️');
+    process.exit(1);
   }
 };
 
-const initmsg = "Answer with one sh command each time. ONLY SH COMMAND! NO ANY markdown!!! no nano or vi, only one-line commands are availible. Everything you answer is executed on the real machine. It is macOS. DO NOT provide explanations or use markdown, just the command.";
+const initmsg = "Answer with one sh command each time. ONLY SH COMMAND! NO ANY markdown!!! no nano or vi, only one-line commands are availible. Everything you answer is executed on the real machine. It is macOS.";
 
 const loadConversationHistory = () => {
   if (fs.existsSync('conversation_history.json')) {
@@ -52,21 +47,31 @@ const executeCommand = (command) => {
     });
   });
 };
-const Ollama = require('ollama');
 
-const executeOllama = async (messages) => {
+const callOpenAI = async (messages) => {
   try {
-    const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'codellama:latest';
-    console.log({ messagesLength: messages.length });
-    const ollama = Ollama.default;
-    const response = await ollama.chat({
-      model: OLLAMA_MODEL,
-      messages: messages,
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages,
+        max_tokens: 4096
+      })
     });
-    console.log(response);
-    return response.message.content; // Extract the content
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'OpenAI API error');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
   } catch (error) {
-    throw new Error(`Ollama error: ${error.message}`);
+    throw new Error(`OpenAI error: ${error.message}`);
   }
 };
 
@@ -77,12 +82,10 @@ const executeAndRecurse = async (input) => {
   }
 
   try {
-    console.time('Ollama Request');
-    const response = await executeOllama(conversationHistory);
-    console.timeEnd('Ollama Request');
+    console.time('OpenAI Request');
+    const command = await callOpenAI(conversationHistory);
+    console.timeEnd('OpenAI Request');
 
-    // Clean up the response to get just the command
-    const command = response.trim();
     console.log(`📢 Command: ${command}`);
     fs.appendFileSync('responses.log', `${command}\n`);
 
@@ -123,6 +126,12 @@ const executeAndRecurse = async (input) => {
     addToHistory(conversationHistory, `Error: ${error}`, 'system');
     fs.writeFileSync('conversation_history.json', JSON.stringify(conversationHistory, null, 2));
     console.log(`🚨 ${error}`);
+    
+    // Sleep on API error
+    if (error.message.includes('OpenAI')) {
+      console.log('Sleeping for 12 seconds due to API error...');
+      await sleep(12000);
+    }
   }
 };
 
@@ -133,4 +142,4 @@ const main = async () => {
   await executeAndRecurse(input);
 };
 
-main();
+main().catch(console.error);

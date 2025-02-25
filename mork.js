@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { exec } = require('child_process');
-const { spawn } = require('child_process'); // Updated import
+const ollama = require('ollama').default;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -25,6 +25,7 @@ const loadEnv = () => {
 
 const initmsg = "Answer with one sh command each time. ONLY SH COMMAND! NO ANY markdown!!! no nano or vi, only one-line commands are availible. Everything you answer is executed on the real machine. It is macOS. DO NOT provide explanations or use markdown, just the command.";
 
+// Common utilities from both scripts
 const loadConversationHistory = () => {
   if (fs.existsSync('conversation_history.json')) {
     return JSON.parse(fs.readFileSync('conversation_history.json', 'utf-8'));
@@ -52,19 +53,42 @@ const executeCommand = (command) => {
     });
   });
 };
-const Ollama = require('ollama');
 
-const executeOllama = async (messages) => {
+// OpenAI API call
+const callOpenAI = async (messages) => {
   try {
-    const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'codellama:latest';
-    console.log({ messagesLength: messages.length });
-    const ollama = Ollama.default;
-    const response = await ollama.chat({
-      model: OLLAMA_MODEL,
-      messages: messages,
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages,
+        max_tokens: 4096
+      })
     });
-    console.log(response);
-    return response.message.content; // Extract the content
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    throw new Error(`OpenAI error: ${error.message}`);
+  }
+};
+
+// Ollama API call
+const callOllama = async (messages) => {
+  try {
+    const response = await ollama.chat({
+      model: 'codellama:latest',
+      messages
+    });
+    return response.message.content;
   } catch (error) {
     throw new Error(`Ollama error: ${error.message}`);
   }
@@ -77,12 +101,20 @@ const executeAndRecurse = async (input) => {
   }
 
   try {
-    console.time('Ollama Request');
-    const response = await executeOllama(conversationHistory);
-    console.timeEnd('Ollama Request');
+    let command;
+    try {
+      console.time('OpenAI Request');
+      command = await callOpenAI(conversationHistory);
+      console.timeEnd('OpenAI Request');
+      console.log('🌍 Using OpenAI');
+    } catch (error) {
+      console.log('🔄 Falling back to Ollama...');
+      console.time('Ollama Request');
+      command = await callOllama(conversationHistory);
+      console.timeEnd('Ollama Request');
+      console.log('🤖 Using Ollama');
+    }
 
-    // Clean up the response to get just the command
-    const command = response.trim();
     console.log(`📢 Command: ${command}`);
     fs.appendFileSync('responses.log', `${command}\n`);
 
@@ -133,4 +165,4 @@ const main = async () => {
   await executeAndRecurse(input);
 };
 
-main();
+main().catch(console.error);
